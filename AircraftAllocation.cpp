@@ -23,7 +23,7 @@ public :
 
     std::vector<int> m_vPassengerTurnedAway; 
     
-    bool m_bVerbose = true;
+    bool m_bVerbose = false;
 
     void LoadDataSet_1()
     {
@@ -434,7 +434,8 @@ public :
         myfile.open("result_.csv");
         myfile << "Cost History.\n";
         myfile << "T = "        << m_fTemperature << ",\n";
-        myfile << "DFactor = "  << m_fDecreaseFactor << ",\n";
+        myfile << "DFactor = " << m_fDecreaseFactor << ",\n";
+        myfile << "FinalCost = "  << l_vCostHistory.back() << ",\n";
         for(auto cost : l_vCostHistory)
             myfile << cost <<",\n";
         myfile.close();
@@ -468,12 +469,12 @@ int main()
     std::cout << "########## Aircraft Allocation Problem ##########\n";
 
     Data l_Data;
-    SimulatedAnnealing l_SA(99,0.01);
+    SimulatedAnnealing l_SA(999,0.01);
 
     l_Data.LoadDataSet_2();
 
-    std::cout << " data cost : " << l_Data.CostEvaluation(std::vector<int> {1, 6, 0, 0, 3, 1, 16 ,0 ,0 ,2 ,1, 22, 0, 0, 2, 2, 12, 0, 0, 1}) << std::endl;
+    //std::cout << " data cost : " << l_Data.CostEvaluation(std::vector<int> {1, 6, 0, 0, 3, 1, 16 ,0 ,0 ,2 ,1, 22, 0, 0, 2, 2, 12, 0, 0, 1}) << std::endl;
 
-    //l_SA.ApplyAlgorithm(l_Data);
+    l_SA.ApplyAlgorithm(l_Data);
 
 }
