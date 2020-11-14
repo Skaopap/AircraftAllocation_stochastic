@@ -22,6 +22,8 @@ public :
     std::vector<std::vector<int>> m_bAircraftRouteAllocation; // [routeNumber][aircraftType]
 
     std::vector<int> m_vPassengerTurnedAway; 
+    
+    bool m_bVerbose = true;
 
     void LoadDataSet_1()
     {
@@ -33,26 +35,18 @@ public :
         m_bAircraftRouteAllocation = { {0,5,10,15}, {1,6,11,16}, {2,7,12,17}, {3,8,13,18}, {4,9,14,19} };
 
         m_vPassengerDemand = { 250, 100 , 180 , 100 , 600};
+    }
 
-        /*m_vPassengerDemand.push_back(std::make_pair(std::vector<float> {200, 220, 250, 270, 300}, std::vector<float> {0.2, 0.05, 0.35, 0.2, 0.2}));
-        m_vPassengerDemand.push_back(std::make_pair(std::vector<float> {50,150}, std::vector<float> {0.3,0.7}));
-        m_vPassengerDemand.push_back(std::make_pair(std::vector<float> {140,160,180,200,220}, std::vector<float> {0.1,0.2,0.4,0.2,0.1}));
-        m_vPassengerDemand.push_back(std::make_pair(std::vector<float> {10,50,80,100,340}, std::vector<float> {0.2,0.2,0.3,0.2,0.1}));
-        m_vPassengerDemand.push_back(std::make_pair(std::vector<float> {580,600,620}, std::vector<float> {0.1,0.8,0.1}));
+    void LoadDataSet_2()
+    {
+        m_vCosts                = { 12,  2, 43, 32, 20, 20, 34, 63, 10, 30, 30, 10, 40,  6, 10, 19, 20, 12, 34, 87 };
+        m_vRevenueLost          = { 13, 20, 7, 7, 15 };
+        m_vAircraftCapacity     = { 16, 16, 16, 16, 16, 10, 10, 10, 10, 10, 30, 30, 30, 30, 30, 23, 23, 23, 23, 23 };
+        m_vAircraftAvailable    = { 10, 19, 25, 16 };
 
-        // Compute Esperanza
-        for (auto PassengerDemand : m_vPassengerDemand)
-        {
-            float l_fEsperanza;
+        m_bAircraftRouteAllocation = { {0,5,10,15}, {1,6,11,16}, {2,7,12,17}, {3,8,13,18}, {4,9,14,19} };
 
-            for (int index = 0 ; index < PassengerDemand.first.size() ; ++index)
-            {
-                l_fEsperanza += PassengerDemand.first[index] * PassengerDemand.second[index];
-            }
-
-            m_vPassengerDemandEsperanza.push_back(l_fEsperanza);
-        }*/
-
+        m_vPassengerDemand = { 800 , 900 , 700 , 650 , 380 };
     }
 
     float CostEvaluation(const std::vector<int>& p_vAircraftAllocation)
@@ -69,6 +63,9 @@ public :
         {
             l_fResult += m_vCosts[index] * p_vAircraftAllocation[index];
         }
+
+        if(m_bVerbose)
+            std::cout << " total route operating cost : " << l_fResult << std::endl;
 
         // calcul number of passenger turned away per route
         std::vector<float> l_vPassengersTurnedAway;
@@ -88,6 +85,9 @@ public :
                 l_vPassengersTurnedAway.push_back(0);
             else // less place
                 l_vPassengersTurnedAway.push_back(l_fPassengerTA);
+
+            if (m_bVerbose)
+                std::cout << "passengers TA on route " << index + 1 << " : " << (l_fPassengerTA < 0 ? 0 : l_fPassengerTA) << std::endl;
         }
 
 
@@ -95,7 +95,14 @@ public :
         for (int route = 0; route < 5; ++route)
         {
             l_fResult += m_vRevenueLost[route] * l_vPassengersTurnedAway[route];
+
+            if (m_bVerbose)
+                std::cout << "revenue lost on route " << route + 1 << " : " << m_vRevenueLost[route] << "*" << l_vPassengersTurnedAway[route] << " = " << m_vRevenueLost[route] * l_vPassengersTurnedAway[route] << std::endl;
+
         }
+
+        if (m_bVerbose)
+            std::cout << "result : " << l_fResult << std::endl;
 
         return l_fResult;
     }
@@ -365,6 +372,7 @@ public :
 
     void ApplyAlgorithm(Data& p_Data)
     {
+        float l_fTemperature = m_fTemperature;
         // initiate first candidate and its cost
         std::vector<int> l_vCurrentCandidate    = p_Data.GenerateRandomAllocation(); 
         float l_fCurrentCost                    = p_Data.CostEvaluation(l_vCurrentCandidate);
@@ -373,7 +381,7 @@ public :
 
         std::vector<std::vector<int>> l_vNeighbors;
 
-        while (m_fTemperature > 0.1)
+        while (l_fTemperature > 0.1)
         {
             for(int step = 0 ; step < m_iStepNumber ; ++step)
             {
@@ -406,7 +414,7 @@ public :
                     l_fCurrentCost      = l_fNeighborsCandidateCost;
                 }
                 // Condition with the temperature value
-                else if (GenerateRandomNumber(0,100) < exp((-l_fCostDifference)/ m_fTemperature))
+                else if (GenerateRandomNumber(0,100) < exp((-l_fCostDifference)/ l_fTemperature))
                 {
                     l_vCurrentCandidate = l_vMinimunCostNeighbor;
                     l_fCurrentCost      = l_fNeighborsCandidateCost;
@@ -418,7 +426,7 @@ public :
             l_vCostHistory.push_back(l_fCurrentCost);
 
             // Decrease the temperature
-            m_fTemperature *= (1-m_fDecreaseFactor);
+            l_fTemperature *= (1-m_fDecreaseFactor);
         }
 
         // Generate csv for cost history
@@ -460,10 +468,12 @@ int main()
     std::cout << "########## Aircraft Allocation Problem ##########\n";
 
     Data l_Data;
-    SimulatedAnnealing l_SA(9999,0.001);
+    SimulatedAnnealing l_SA(99,0.01);
 
-    l_Data.LoadDataSet_1();
+    l_Data.LoadDataSet_2();
 
-    l_SA.ApplyAlgorithm(l_Data);
+    std::cout << " data cost : " << l_Data.CostEvaluation(std::vector<int> {1, 6, 0, 0, 3, 1, 16 ,0 ,0 ,2 ,1, 22, 0, 0, 2, 2, 12, 0, 0, 1}) << std::endl;
+
+    //l_SA.ApplyAlgorithm(l_Data);
 
 }
